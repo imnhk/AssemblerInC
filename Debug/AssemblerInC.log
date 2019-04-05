@@ -1,1 +1,4 @@
-﻿  AssemblerInC.vcxproj -> D:\문서\GitHub\AssemblerInC\Debug\AssemblerInC.exe
+﻿  assembler.c
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(88): warning C4101: 'counter' :참조되지 않은 지역 변수입니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(39): warning C4101: 'output' :참조되지 않은 지역 변수입니다.
+  AssemblerInC.vcxproj -> D:\문서\GitHub\AssemblerInC\Debug\AssemblerInC.exe

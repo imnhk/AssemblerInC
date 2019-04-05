@@ -78,10 +78,123 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	} */
 
-	// get codes
+	
+
+
 	char instructionLine[MAX_INSTRUCTION_LEN];
+	char *token = NULL;
+	char *op1, *op2, *op3;
+	
+	int counter;
+
 	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL) {
-		printf("%s\n", instructionLine);
+		token = strtok(instructionLine, "\n\t");
+		if (strcmp(token, ".text") == 0) {
+			// fount .text, this is end of .data
+			break;
+		}
+	}
+
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL) {
+		token = strtok(instructionLine, "\n, ");
+
+		while (token) {
+			printf("%s ", token);
+
+			if (strcmp(token, "and") == 0) {			// Instruction AND, format R
+				// op3 = op1 & op2
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+				printf("and: %s %s %s", op1, op2, op3);
+			}
+			else if (strcmp(token, "andi") == 0) {		// Instruction ANDI, format I
+				// op2 = op1 & immediate(ZeroExtImm???)
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // immediate
+				printf("andi: %s %s %s", op1, op2, op3);
+			}
+			else if (strcmp(token, "or") == 0) {		// Instruction OR, format R
+				// op3 = op1 | op2
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+				printf("or: %s %s %s", op1, op2, op3);
+			}
+			else if (strcmp(token, "ori") == 0) {		// Instruction ORI, format I
+				// op2 = op1 | immediate(ZeroExtImm???)
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // immediate
+				printf("andi: %s %s %s", op1, op2, op3);
+			}
+			else if (strcmp(token, "nor") == 0) {		// Instruction NOR, format R
+				// op3 = ~(op1 | op2)
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+			}
+
+			else if (strcmp(token, "la") == 0) {		// Instruction LA, format PSEUDO
+				// Load Address is pseudo insturction
+				// should be divided into two instruction
+				// lui $register upper 16bit address +
+				// ori $register lower 16bit address
+
+				op1 = strtok(NULL, "\n, "); // register
+				op2 = strtok(NULL, "\n, "); // label
+			}
+			else if (strcmp(token, "lw") == 0) {		// Instruction ???, format ?
+				// TODO load word
+			}
+			else if (strcmp(token, "sw") == 0) {		// Instruction ???, format ?
+				// TODO store word
+			}
+			else if (strcmp(token, "addiu") == 0) {		// Instruction ???, format ?
+				// TODO add imm. unsigned
+			}
+			else if (strcmp(token, "addu") == 0) {		// Instruction ???, format ?
+				// TODO
+			}
+			else if (strcmp(token, "subu") == 0) {		// Instruction ???, format ?
+				// TODO subtract unsigned
+			}
+			else if (strcmp(token, "beq") == 0) {		// Instruction ???, format ?
+				// TODO branch on ==
+			}
+			else if (strcmp(token, "bme") == 0) {		// Instruction ???, format ?
+				// TODO branch on !=
+			}
+			else if (strcmp(token, "j") == 0) {			// Instruction ???, format ?
+				// TODO jump
+			}
+			else if (strcmp(token, "jal") == 0) {		// Instruction ???, format ?
+				// TODO jump and link
+			}
+			else if (strcmp(token, "jr") == 0) {		// Instruction ???, format ?
+				// TODO jump register
+			}
+			else if (strcmp(token, "lui") == 0) {		// Instruction ???, format ?
+				// TODO load upper imm.unsigned
+			}
+			else if (strcmp(token, "sltiu") == 0) {		// Instruction ???, format ?
+				// TODO set less than imm.unsigned
+			}
+			else if (strcmp(token, "sltu") == 0) {		// Instruction ???, format ?
+				// TODO set less than unsigned
+			}
+			else if (strcmp(token, "sll") == 0) {		// Instruction ???, format ?
+				// TODO shift << logical
+			}
+			else if (strcmp(token, "jr") == 0) {		// Instruction ???, format ?
+				// TODO shitf >> logical
+			}
+
+
+			token = strtok(NULL, "\n\t");
+		}
+
 
 	}
 
