@@ -51,14 +51,13 @@ main(int argc, char *argv[])
 	char instructionLine[MAX_INSTRUCTION_LEN];
 	char *token = NULL;
 	char *op1, *op2, *op3;
-	
 	int counter;
 
 	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL)
 	{
+		// Skip until find .text
 		token = strtok(instructionLine, "\n\t");
 		if (strcmp(token, ".text") == 0) {
-			// fount .text, this is end of .data
 			break;
 		}
 	}
@@ -121,6 +120,8 @@ main(int argc, char *argv[])
 				// should be divided into two instruction
 				// lui $register upper 16bit address +
 				// ori $register lower 16bit address
+
+
 
 				op1 = strtok(NULL, "\n, "); // register
 				op2 = strtok(NULL, "\n, "); // label
