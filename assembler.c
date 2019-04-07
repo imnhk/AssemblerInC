@@ -38,48 +38,15 @@ main(int argc, char *argv[])
 {
 	FILE *input, *output;
 	char *filename;
-	/*
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <*.s>\n", argv[0]);
-		fprintf(stderr, "Example: %s sample_input/example?.s\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	input = fopen(argv[1], "r");
-	if (input == NULL) {
-		perror("ERROR");
-		exit(EXIT_FAILURE);
-	}
-
-	filename = strdup(argv[1]); // strdup() is not a standard C library but fairy used a lot.
-	if (change_file_ext(filename) == NULL) {
-		fprintf(stderr, "'%s' file is not an assembly file.\n", filename);
-		exit(EXIT_FAILURE);
-	}
-
-	output = fopen(filename, "w");
-	if (output == NULL) {
-		perror("ERROR");
-		exit(EXIT_FAILURE);
-	}*/
 
 	input = fopen("example1.s", "r");
-	if (input == NULL) {
+	if (input == NULL)
+	{
 		perror("ERROR");
 		exit(EXIT_FAILURE);
 	}
 
 	filename = strdup("output_test.o"); // strdup() is not a standard C library but fairy used a lot.
-
-	/*
-	output = fopen(filename, "w");
-	if (output == NULL) {
-		perror("ERROR");
-		exit(EXIT_FAILURE);
-	} */
-
-	
-
 
 	char instructionLine[MAX_INSTRUCTION_LEN];
 	char *token = NULL;
@@ -87,7 +54,8 @@ main(int argc, char *argv[])
 	
 	int counter;
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL) {
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL)
+	{
 		token = strtok(instructionLine, "\n\t");
 		if (strcmp(token, ".text") == 0) {
 			// fount .text, this is end of .data
@@ -95,48 +63,60 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL) {
-		token = strtok(instructionLine, "\n, ");
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL)
+	{
+		token = strtok(instructionLine, "\t\n, ");
 
-		while (token) {
-			printf("%s ", token);
+		while (token)
+		{
+			printf("[%s]", token);
 
-			if (strcmp(token, "and") == 0) {			// Instruction AND, format R
+			if (strcmp(token, "and") == 0){			
+				// Instruction AND, format R
 				// op3 = op1 & op2
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
-				printf("and: %s %s %s", op1, op2, op3);
-			}
-			else if (strcmp(token, "andi") == 0) {		// Instruction ANDI, format I
-				// op2 = op1 & immediate(ZeroExtImm???)
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // immediate
-				printf("andi: %s %s %s", op1, op2, op3);
-			}
-			else if (strcmp(token, "or") == 0) {		// Instruction OR, format R
-				// op3 = op1 | op2
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
-				printf("or: %s %s %s", op1, op2, op3);
-			}
-			else if (strcmp(token, "ori") == 0) {		// Instruction ORI, format I
-				// op2 = op1 | immediate(ZeroExtImm???)
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // immediate
-				printf("andi: %s %s %s", op1, op2, op3);
-			}
-			else if (strcmp(token, "nor") == 0) {		// Instruction NOR, format R
-				// op3 = ~(op1 | op2)
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
-			}
 
-			else if (strcmp(token, "la") == 0) {		// Instruction LA, format PSEUDO
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+				printf("and: %s %s %s\n", op1, op2, op3);
+			}
+			else if (strcmp(token, "andi") == 0) {		
+				// Instruction ANDI, format I
+				// op2 = op1 & immediate(ZeroExtImm???)
+
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // immediate
+				printf("andi: %s %s %s\n", op1, op2, op3);
+			}
+			else if (strcmp(token, "or") == 0) {		
+				// Instruction OR, format R
+				// op3 = op1 | op2
+
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+				printf("or: %s %s %s\n", op1, op2, op3);
+			}
+			else if (strcmp(token, "ori") == 0) {		
+				// Instruction ORI, format I
+				// op2 = op1 | immediate(ZeroExtImm???)
+
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // immediate
+				printf("andi: %s %s %s\n", op1, op2, op3);
+			}
+			else if (strcmp(token, "nor") == 0) {		
+				// Instruction NOR, format R
+				// op3 = ~(op1 | op2)
+
+				op1 = strtok(NULL, "\n, "); // rs
+				op2 = strtok(NULL, "\n, "); // rt
+				op3 = strtok(NULL, "\n, "); // rd
+			}
+			else if (strcmp(token, "la") == 0) {		
+				// Instruction LA, format PSEUDO
 				// Load Address is pseudo insturction
 				// should be divided into two instruction
 				// lui $register upper 16bit address +
@@ -189,6 +169,10 @@ main(int argc, char *argv[])
 			}
 			else if (strcmp(token, "jr") == 0) {		// Instruction ???, format ?
 				// TODO shitf >> logical
+			}
+			else {
+				// not insturctions. maybe Label?
+				// 메모리 할당. 어떻게 하지?
 			}
 
 

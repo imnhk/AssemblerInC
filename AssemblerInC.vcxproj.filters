@@ -21,7 +21,7 @@
     <ClCompile Include="assembler_temp.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\smfsd\바탕 화면\assemblerSample.c">
+    <ClCompile Include="assemblerSample.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
