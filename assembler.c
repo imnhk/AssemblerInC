@@ -13,6 +13,8 @@
  *******************************************************/
 char *change_file_ext(char *str);
 
+const char* int2bin(int num);
+
 /*******************************************************
  * Function: main
  *
@@ -40,8 +42,7 @@ main(int argc, char *argv[])
 	char *filename;
 
 	input = fopen("example1.s", "r");
-	if (input == NULL)
-	{
+	if (input == NULL){
 		perror("ERROR");
 		exit(EXIT_FAILURE);
 	}
@@ -52,32 +53,50 @@ main(int argc, char *argv[])
 	char *token = NULL;
 	char *op1, *op2, *op3;
 	int counter;
+	int dataLineCount = 0, textLineCount = 0;
+	char binaryLine[] = "00000000000000000000000000000000"; // 32bit
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL)
-	{
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
+
 		// Skip until find .text
 		token = strtok(instructionLine, "\n\t");
+		dataLineCount++;
 		if (strcmp(token, ".text") == 0) {
+			dataLineCount -= 2; // exclude ".data" and ".text" line
 			break;
 		}
 	}
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL)
-	{
+	printf("Data: %d\n", dataLineCount);
+
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
+		
 		token = strtok(instructionLine, "\t\n, ");
+		textLineCount++;
 
-		while (token)
-		{
-			printf("[%s]", token);
+		while (token){
 
-			if (strcmp(token, "and") == 0){			
+			printf("[%s]\n", token);
+
+			if (strcmp(token, "and") == 0) {
+				// opcode of AND is 000000
+				strcpy(binaryLine, "000000");
+
 				// Instruction AND, format R
-				// op3 = op1 & op2
+				// op3 <- op1 & op2
+				op1 = strtok(NULL, "$\n, "); // rs 17
+				op2 = strtok(NULL, "$\n, "); // rt 17
+				op3 = strtok(NULL, "$\n, "); // rd 0
 
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
-				printf("and: %s %s %s\n", op1, op2, op3);
+				strcat(binaryLine, int2bin(atoi(op2)));
+				strcat(binaryLine, int2bin(atoi(op3)));
+				strcat(binaryLine, int2bin(atoi(op1)));
+
+				// funct of AND is 100100
+				strcat(binaryLine, "000000");
+
+				printf("bin: %s\n", binaryLine);
+
 			}
 			else if (strcmp(token, "andi") == 0) {		
 				// Instruction ANDI, format I
@@ -218,4 +237,16 @@ char
 
 	str[strlen(str) - 1] = 'o';
 	return "";
+}
+
+const char* int2bin(int num){
+	char result[6];
+	result[5] = '\0';
+	printf("Convert %d into ", num);
+	for (int i = 4; i >= 0; i--) {
+		result[i] = (num%2 == 0) ? '0' : '1';
+		num /= 2;
+	}
+	printf("to %s\n", result);
+	return strdup(result);
 }
