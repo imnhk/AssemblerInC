@@ -13,7 +13,8 @@
  *******************************************************/
 char *change_file_ext(char *str);
 
-const char* int2bin(int num);
+const char* int2bin5(int num);
+const char* int2bin16(int num);
 
 /*******************************************************
  * Function: main
@@ -53,97 +54,106 @@ main(int argc, char *argv[])
 	char *token = NULL;
 	char *op1, *op2, *op3;
 	int counter;
-	int dataLineCount = 0, textLineCount = 0;
-	char binaryLine[] = "00000000000000000000000000000000"; // 32bit
+	int totalDataCount = 0, totalTextCount = 0;
+	const int dataStartAddress = 4096; // 0001000000000000(2)
+	int dataCount = 0;
+
+	char binaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
 	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
 
 		// Skip until find .text
 		token = strtok(instructionLine, "\n\t");
-		dataLineCount++;
+		totalDataCount++;
 		if (strcmp(token, ".text") == 0) {
-			dataLineCount -= 2; // exclude ".data" and ".text" line
+			totalDataCount -= 2; // exclude ".data" and ".text" line
 			break;
 		}
 	}
 
-	printf("Data: %d\n", dataLineCount);
+	printf("Data: %d\n", totalDataCount);
 
 	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
 		
 		token = strtok(instructionLine, "\t\n, ");
-		textLineCount++;
+		totalTextCount++;
 
 		while (token){
 
 			printf("[%s]\n", token);
 
 			if (strcmp(token, "and") == 0) {
+				// Instruction AND, format R
+				// op3 <- op1 & op2
+				op1 = strtok(NULL, "$\n, "); // rs
+				op2 = strtok(NULL, "$\n, "); // rt
+				op3 = strtok(NULL, "$\n, "); // rd
+
 				// opcode of AND is 000000
 				strcpy(binaryLine, "000000");
 
-				// Instruction AND, format R
-				// op3 <- op1 & op2
-				op1 = strtok(NULL, "$\n, "); // rs 17
-				op2 = strtok(NULL, "$\n, "); // rt 17
-				op3 = strtok(NULL, "$\n, "); // rd 0
+				// order is changed!
+				strcat(binaryLine, int2bin5(atoi(op2)));
+				strcat(binaryLine, int2bin5(atoi(op3)));
+				strcat(binaryLine, int2bin5(atoi(op1)));
 
-				strcat(binaryLine, int2bin(atoi(op2)));
-				strcat(binaryLine, int2bin(atoi(op3)));
-				strcat(binaryLine, int2bin(atoi(op1)));
-
+				// shamt of AND os 00000
+				strcat(binaryLine, "00000");
 				// funct of AND is 100100
 				strcat(binaryLine, "000000");
 
-				printf("bin: %s\n", binaryLine);
-
+				printf("and: %s\n", binaryLine);
 			}
 			else if (strcmp(token, "andi") == 0) {		
 				// Instruction ANDI, format I
 				// op2 = op1 & immediate(ZeroExtImm???)
 
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // immediate
-				printf("andi: %s %s %s\n", op1, op2, op3);
+				//printf("andi: %s %s %s\n", op1, op2, op3);
 			}
 			else if (strcmp(token, "or") == 0) {		
 				// Instruction OR, format R
 				// op3 = op1 | op2
 
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
-				printf("or: %s %s %s\n", op1, op2, op3);
+				//printf("or: %s %s %s\n", op1, op2, op3);
 			}
 			else if (strcmp(token, "ori") == 0) {		
 				// Instruction ORI, format I
 				// op2 = op1 | immediate(ZeroExtImm???)
-
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // immediate
-				printf("andi: %s %s %s\n", op1, op2, op3);
+				
+				//printf("andi: %s %s %s\n", op1, op2, op3);
 			}
 			else if (strcmp(token, "nor") == 0) {		
 				// Instruction NOR, format R
 				// op3 = ~(op1 | op2)
-
-				op1 = strtok(NULL, "\n, "); // rs
-				op2 = strtok(NULL, "\n, "); // rt
-				op3 = strtok(NULL, "\n, "); // rd
 			}
 			else if (strcmp(token, "la") == 0) {		
 				// Instruction LA, format PSEUDO
-				// Load Address is pseudo insturction
-				// should be divided into two instruction
-				// lui $register upper 16bit address +
-				// ori $register lower 16bit address
 
+				op1 = strtok(NULL, "$\n, "); // register
+				op2 = strtok(NULL, "$\n, "); // label
 
+				// opcode of LUI is 001111
+				strcpy(binaryLine, "001111");
+				// rs of LUI is empty
+				strcat(binaryLine, "00000");
 
-				op1 = strtok(NULL, "\n, "); // register
-				op2 = strtok(NULL, "\n, "); // label
+				// address of register to load
+				strcat(binaryLine, int2bin5(atoi(op1)));
+
+				// save data to register
+				strcat(binaryLine, int2bin16(dataStartAddress));
+				printf("lui: %s\n", binaryLine);
+
+				if (dataCount != 0) {
+					// use ORI insturction. opcode of ORI is 001101
+					strcpy(binaryLine, "001101");
+					strcat(binaryLine, int2bin5(atoi(op1)));
+					strcat(binaryLine, int2bin5(atoi(op1)));
+					strcat(binaryLine, int2bin16(dataCount*4));
+					printf("ori: %s\n", binaryLine);
+				}
+				dataCount++;
+
 			}
 			else if (strcmp(token, "lw") == 0) {		// Instruction ???, format ?
 				// TODO load word
@@ -153,6 +163,7 @@ main(int argc, char *argv[])
 			}
 			else if (strcmp(token, "addiu") == 0) {		// Instruction ???, format ?
 				// TODO add imm. unsigned
+
 			}
 			else if (strcmp(token, "addu") == 0) {		// Instruction ???, format ?
 				// TODO
@@ -239,14 +250,20 @@ char
 	return "";
 }
 
-const char* int2bin(int num){
-	char result[6];
-	result[5] = '\0';
-	printf("Convert %d into ", num);
+const char* int2bin5(int num){
+	char result[] = "00000";
 	for (int i = 4; i >= 0; i--) {
 		result[i] = (num%2 == 0) ? '0' : '1';
 		num /= 2;
 	}
-	printf("to %s\n", result);
+	return strdup(result);
+}
+
+const char* int2bin16(int num) {
+	char result[] = "0000000000000000";
+	for (int i = 15; i >= 0; i--) {
+		result[i] = (num % 2 == 0) ? '0' : '1';
+		num /= 2;
+	}
 	return strdup(result);
 }
