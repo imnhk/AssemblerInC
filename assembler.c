@@ -13,6 +13,8 @@
  *******************************************************/
 char *change_file_ext(char *str);
 
+int hex2int(char* hex);
+
 const char* int2bin5(int num);
 const char* int2bin16(int num);
 
@@ -102,7 +104,7 @@ main(int argc, char *argv[])
 				// funct of AND is 100100
 				strcat(binaryLine, "000000");
 
-				printf("and: %s\n", binaryLine);
+				printf("and  : %s\n", binaryLine);
 			}
 			else if (strcmp(token, "andi") == 0) {		
 				// Instruction ANDI, format I
@@ -142,7 +144,7 @@ main(int argc, char *argv[])
 
 				// save data to register
 				strcat(binaryLine, int2bin16(dataStartAddress));
-				printf("lui: %s\n", binaryLine);
+				printf("lui  : %s\n", binaryLine);
 
 				if (dataCount != 0) {
 					// use ORI insturction. opcode of ORI is 001101
@@ -150,7 +152,7 @@ main(int argc, char *argv[])
 					strcat(binaryLine, int2bin5(atoi(op1)));
 					strcat(binaryLine, int2bin5(atoi(op1)));
 					strcat(binaryLine, int2bin16(dataCount*4));
-					printf("ori: %s\n", binaryLine);
+					printf("ori  : %s\n", binaryLine);
 				}
 				dataCount++;
 
@@ -163,7 +165,24 @@ main(int argc, char *argv[])
 			}
 			else if (strcmp(token, "addiu") == 0) {		// Instruction ???, format ?
 				// TODO add imm. unsigned
+				op1 = strtok(NULL, "$\n, "); // rs
+				op2 = strtok(NULL, "$\n, "); // rt
+				op3 = strtok(NULL, "$\n, "); // immediate
 
+
+				// opcode of ADDIU is 001001
+				strcpy(binaryLine, "001001");
+
+				strcat(binaryLine, int2bin5(atoi(op2)));
+				strcat(binaryLine, int2bin5(atoi(op1)));
+
+
+				if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
+					strcat(binaryLine, int2bin16(hex2int(op3)));
+				else
+					strcat(binaryLine, int2bin16(atoi(op3)));
+
+				printf("addiu: %s\n", binaryLine);
 			}
 			else if (strcmp(token, "addu") == 0) {		// Instruction ???, format ?
 				// TODO
@@ -248,6 +267,23 @@ char
 
 	str[strlen(str) - 1] = 'o';
 	return "";
+}
+
+int hex2int(char* hex){
+	// hex: "0x1" ~ "0xFFFF"
+	hex += 2; // remove '0x'
+	int result = 0;
+	
+	while ((*hex) != '\0'){
+		if (('0' <= (*hex)) && ((*hex) <= '9'))
+			result = result * 16 + (*hex) - '0';
+		else if (('a' <= (*hex)) && ((*hex) <= 'f'))
+			result = result * 16 + (*hex) - 'a' + 10;
+		else if (('A' <= (*hex)) && ((*hex) <= 'F'))
+			result = result * 16 + (*hex) - 'A' + 10;
+		hex++;
+	}
+	return result;
 }
 
 const char* int2bin5(int num){
