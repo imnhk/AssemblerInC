@@ -55,20 +55,25 @@ main(int argc, char *argv[])
 	char instructionLine[MAX_INSTRUCTION_LEN];
 	char *token = NULL;
 	char *op1, *op2, *op3;
-	int counter;
-	int totalDataCount = 0, totalTextCount = 0;
-	const int dataStartAddress = 4096; // 0001000000000000(2)
+	int counter = 0; // .text line count, include Labels
+	int totalDataCount = 0, totalTextCount = 0; // binary line count, exclude labels.
+	const int dataStartAddress = 4096; // 0001 0000 0000 0000(2) upper 16bit (0x1000 0000)
+	const int textStartAddress = 64; // 0000 0000 0100 0000(2) upper 16bit (0x0040 0000)
 	int dataCount = 0;
 
 	char binaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
 
-		// Skip until find .text
+	fgets(instructionLine, MAX_INSTRUCTION_LEN, input); // first line should be .data
+	token = strtok(instructionLine, "\n\t");
+	printf("first line: %s\n", token);
+
+	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
 		token = strtok(instructionLine, "\n\t");
 		totalDataCount++;
+
 		if (strcmp(token, ".text") == 0) {
-			totalDataCount -= 2; // exclude ".data" and ".text" line
+			totalDataCount -= 1; // exclude ".text" line
 			break;
 		}
 	}
@@ -82,100 +87,119 @@ main(int argc, char *argv[])
 
 		while (token){
 
-			printf("[%s]\n", token);
+			printf("counter: %d, token: %s\n", counter, token);
 
 			if (strcmp(token, "and") == 0) {
-				// Instruction AND, format R
-				// op3 <- op1 & op2
-				op1 = strtok(NULL, "$\n, "); // rs
-				op2 = strtok(NULL, "$\n, "); // rt
-				op3 = strtok(NULL, "$\n, "); // rd
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
 
-				// opcode of AND is 000000
-				strcpy(binaryLine, "000000");
+				strcpy(binaryLine, "000000"); // opcode
 
-				// order is changed!
+				// rs, rt, rd
 				strcat(binaryLine, int2bin5(atoi(op2)));
 				strcat(binaryLine, int2bin5(atoi(op3)));
-				strcat(binaryLine, int2bin5(atoi(op1)));
+				strcat(binaryLine, int2bin5(atoi(op1))); 
 
-				// shamt of AND os 00000
-				strcat(binaryLine, "00000");
-				// funct of AND is 100100
-				strcat(binaryLine, "000000");
+				strcat(binaryLine, "00000"); // shamt
+				strcat(binaryLine, "000000"); // funct
 
 				printf("and  : %s\n", binaryLine);
 			}
 			else if (strcmp(token, "andi") == 0) {		
 				// Instruction ANDI, format I
 				// op2 = op1 & immediate(ZeroExtImm???)
-
-				//printf("andi: %s %s %s\n", op1, op2, op3);
 			}
 			else if (strcmp(token, "or") == 0) {		
-				// Instruction OR, format R
-				// op3 = op1 | op2
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
 
-				//printf("or: %s %s %s\n", op1, op2, op3);
-			}
-			else if (strcmp(token, "ori") == 0) {		
-				// Instruction ORI, format I
-				// op2 = op1 | immediate(ZeroExtImm???)
+				strcpy(binaryLine, "000000"); // opcode
 				
-				//printf("andi: %s %s %s\n", op1, op2, op3);
+				// rs, rt, rd
+				strcat(binaryLine, int2bin5(atoi(op2)));
+				strcat(binaryLine, int2bin5(atoi(op3)));
+				strcat(binaryLine, int2bin5(atoi(op1)));
+
+				strcat(binaryLine, "00000"); // shamt
+				strcat(binaryLine, "100101"); // funct
+
+				printf("or   : %s\n", binaryLine);
+			}
+			else if (strcmp(token, "ori") == 0) {
+
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "001101"); // opcode
+
+				strcat(binaryLine, int2bin5(atoi(op1))); // rs
+				strcat(binaryLine, int2bin5(atoi(op2))); // rt
+
+				if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
+					strcat(binaryLine, int2bin16(hex2int(op3)));
+				else
+					strcat(binaryLine, int2bin16(atoi(op3)));
+
+				printf("ori  : %s\n", binaryLine);
 			}
 			else if (strcmp(token, "nor") == 0) {		
-				// Instruction NOR, format R
-				// op3 = ~(op1 | op2)
+				op1 = strtok(NULL, "$\n, "); 
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "000000"); // opcode
+
+				// rs, rt, rd
+				strcat(binaryLine, int2bin5(atoi(op2)));
+				strcat(binaryLine, int2bin5(atoi(op3)));
+				strcat(binaryLine, int2bin5(atoi(op1)));
+
+				strcat(binaryLine, "00000"); // shamt
+				strcat(binaryLine, "100111"); // funct
+
+				printf("nor  : %s\n", binaryLine);
 			}
 			else if (strcmp(token, "la") == 0) {		
-				// Instruction LA, format PSEUDO
 
 				op1 = strtok(NULL, "$\n, "); // register
 				op2 = strtok(NULL, "$\n, "); // label
 
-				// opcode of LUI is 001111
-				strcpy(binaryLine, "001111");
-				// rs of LUI is empty
-				strcat(binaryLine, "00000");
+				strcpy(binaryLine, "001111"); // opcode
+				strcat(binaryLine, "00000"); // rs
+				strcat(binaryLine, int2bin5(atoi(op1))); // rt
+				strcat(binaryLine, int2bin16(dataStartAddress)); // immediate
 
-				// address of register to load
-				strcat(binaryLine, int2bin5(atoi(op1)));
-
-				// save data to register
-				strcat(binaryLine, int2bin16(dataStartAddress));
 				printf("lui  : %s\n", binaryLine);
 
 				if (dataCount != 0) {
-					// use ORI insturction. opcode of ORI is 001101
-					strcpy(binaryLine, "001101");
+					strcpy(binaryLine, "001101"); // opcode
 					strcat(binaryLine, int2bin5(atoi(op1)));
 					strcat(binaryLine, int2bin5(atoi(op1)));
 					strcat(binaryLine, int2bin16(dataCount*4));
 					printf("ori  : %s\n", binaryLine);
+					totalTextCount++;
 				}
 				dataCount++;
 
 			}
-			else if (strcmp(token, "lw") == 0) {		// Instruction ???, format ?
-				// TODO load word
+			else if (strcmp(token, "lw") == 0) {		
 			}
-			else if (strcmp(token, "sw") == 0) {		// Instruction ???, format ?
-				// TODO store word
+			else if (strcmp(token, "sw") == 0) {		
 			}
-			else if (strcmp(token, "addiu") == 0) {		// Instruction ???, format ?
-				// TODO add imm. unsigned
+			else if (strcmp(token, "addiu") == 0) {		
+
 				op1 = strtok(NULL, "$\n, "); // rs
 				op2 = strtok(NULL, "$\n, "); // rt
 				op3 = strtok(NULL, "$\n, "); // immediate
 
-
 				// opcode of ADDIU is 001001
 				strcpy(binaryLine, "001001");
 
-				strcat(binaryLine, int2bin5(atoi(op2)));
 				strcat(binaryLine, int2bin5(atoi(op1)));
-
+				strcat(binaryLine, int2bin5(atoi(op2)));
 
 				if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
 					strcat(binaryLine, int2bin16(hex2int(op3)));
@@ -184,55 +208,126 @@ main(int argc, char *argv[])
 
 				printf("addiu: %s\n", binaryLine);
 			}
-			else if (strcmp(token, "addu") == 0) {		// Instruction ???, format ?
-				// TODO
+			else if (strcmp(token, "addu") == 0) {
+
+				op1 = strtok(NULL, "$\n, "); // rs 5
+				op2 = strtok(NULL, "$\n, "); // rt 5
+				op3 = strtok(NULL, "$\n, "); // rd 31
+
+				strcpy(binaryLine, "000000"); // opcode
+
+				strcat(binaryLine, int2bin5(atoi(op2))); // rs
+				strcat(binaryLine, int2bin5(atoi(op3))); // rt
+				strcat(binaryLine, int2bin5(atoi(op1))); // rd
+
+				strcat(binaryLine, "00000"); // shamt
+				strcat(binaryLine, "100001"); // funct
+
+				printf("addu : %s\n", binaryLine);
 			}
-			else if (strcmp(token, "subu") == 0) {		// Instruction ???, format ?
-				// TODO subtract unsigned
+			else if (strcmp(token, "subu") == 0) {		
 			}
-			else if (strcmp(token, "beq") == 0) {		// Instruction ???, format ?
-				// TODO branch on ==
+			else if (strcmp(token, "beq") == 0) {	
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, "); 
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "000100"); // opcode
+				
+				strcat(binaryLine, int2bin5(atoi(op1))); // rs
+				strcat(binaryLine, int2bin5(atoi(op2))); // rt
+
+				// calc dist. to op3 label
+				printf("beq  : todo\n");
 			}
-			else if (strcmp(token, "bme") == 0) {		// Instruction ???, format ?
-				// TODO branch on !=
+			else if (strcmp(token, "bne") == 0) {
+
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, "); 
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "000101"); // opcode
+				
+				strcat(binaryLine, int2bin5(atoi(op1))); // rs
+				strcat(binaryLine, int2bin5(atoi(op2))); // rt
+
+				// calc dist. to op3 label
+				printf("bne  : todo\n");
 			}
-			else if (strcmp(token, "j") == 0) {			// Instruction ???, format ?
-				// TODO jump
+			else if (strcmp(token, "j") == 0) {
+				
+				op1 = strtok(NULL, "$\n, "); // label
+
+				strcpy(binaryLine, "000010"); // opcode
+
+				// address
+				printf("j    : todo\n");
+
 			}
-			else if (strcmp(token, "jal") == 0) {		// Instruction ???, format ?
-				// TODO jump and link
+			else if (strcmp(token, "jal") == 0) {		
 			}
-			else if (strcmp(token, "jr") == 0) {		// Instruction ???, format ?
-				// TODO jump register
+			else if (strcmp(token, "jr") == 0) {		
 			}
-			else if (strcmp(token, "lui") == 0) {		// Instruction ???, format ?
-				// TODO load upper imm.unsigned
+			else if (strcmp(token, "lui") == 0) {		
 			}
-			else if (strcmp(token, "sltiu") == 0) {		// Instruction ???, format ?
-				// TODO set less than imm.unsigned
+			else if (strcmp(token, "sltiu") == 0) {		
 			}
-			else if (strcmp(token, "sltu") == 0) {		// Instruction ???, format ?
-				// TODO set less than unsigned
+			else if (strcmp(token, "sltu") == 0) {		
 			}
-			else if (strcmp(token, "sll") == 0) {		// Instruction ???, format ?
-				// TODO shift << logical
+			else if (strcmp(token, "sll") == 0) {
+
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "000000"); // opcode
+				strcat(binaryLine, "00000"); // rs
+
+				strcat(binaryLine, int2bin5(atoi(op2))); // rt
+				strcat(binaryLine, int2bin5(atoi(op1))); // rd
+				strcat(binaryLine, int2bin5(atoi(op3))); // shamt
+
+				strcat(binaryLine, "000000"); // funct
+
+				printf("sll  : %s\n", binaryLine);
+
 			}
-			else if (strcmp(token, "jr") == 0) {		// Instruction ???, format ?
-				// TODO shitf >> logical
+			else if (strcmp(token, "srl") == 0) {
+
+				op1 = strtok(NULL, "$\n, ");
+				op2 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, ");
+
+				strcpy(binaryLine, "000000"); // opcode
+				strcat(binaryLine, "00000"); // rs
+
+				strcat(binaryLine, int2bin5(atoi(op2))); // rt
+				strcat(binaryLine, int2bin5(atoi(op1))); // rd
+				strcat(binaryLine, int2bin5(atoi(op3))); // shamt
+
+				strcat(binaryLine, "000010"); // funct
+
+				printf("srl  : %s\n", binaryLine);
 			}
 			else {
-				// not insturctions. maybe Label?
-				// 메모리 할당. 어떻게 하지?
+				// Label
+				printf("label: ************** %s **************\n", token);
+				totalTextCount--;
 			}
 
-
 			token = strtok(NULL, "\n\t");
+			counter++;
 		}
 
-
 	}
-
-	// process();
+	printf("\n\n.text: %d\t.data: %d\n", totalTextCount, totalDataCount);
+	strcpy(binaryLine, "0000000000000000");
+	strcat(binaryLine, int2bin16(totalTextCount * 4));
+	printf(".text: %s\n", binaryLine);
+	strcpy(binaryLine, "0000000000000000");
+	strcat(binaryLine, int2bin16(totalDataCount * 4));
+	printf(".data: %s\n", binaryLine);
+	
 
 	fclose(input);
 	//fclose(output);
@@ -270,7 +365,6 @@ char
 }
 
 int hex2int(char* hex){
-	// hex: "0x1" ~ "0xFFFF"
 	hex += 2; // remove '0x'
 	int result = 0;
 	
