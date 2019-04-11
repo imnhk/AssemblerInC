@@ -18,12 +18,6 @@
     <ClCompile Include="assembler.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="assembler_temp.c">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="assemblerSample.c">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="example5.s">

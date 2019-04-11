@@ -56,8 +56,8 @@ main(int argc, char *argv[])
 	char *token = NULL;
 	char *op1, *op2, *op3;
 	char tempInstructionLine[MAX_INSTRUCTION_LEN]; // temp memory
-	
 
+	char resultBinaryLine[2000]; // is this enough? 
 
 	struct variable {
 		int location;
@@ -82,7 +82,6 @@ main(int argc, char *argv[])
 
 	int totalTextCount = 0; // binary line count, exclude labels.
 	int dataLoadCount = 0; // count 
-	int labelCount = 0;
 
 	char tempBinaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
@@ -123,16 +122,24 @@ main(int argc, char *argv[])
 
 		// Save Label
 		if (token[sizeof(token)] == ':') {
-			strcpy(labelList[labelCount].name, token);
-			labelList[labelCount].location = textStartAddress + (counter * 4);
+			strcpy(labelList[labelCounter].name, token);
+			labelList[labelCounter].location = textStartAddress + (counter * 4);
+			//printf("Saved label %s at %d\n", labelList[labelCounter].name, labelList[labelCounter].location);
 			labelCounter++;
-			printf("Saved label %s at %d\n", labelList[labelCount].name, labelList[labelCount].location);
 		}
 		counter++;
 	}
 
 	totalTextCount = counter;
 	counter = 0;
+
+	// print out count of data and text at first of code
+	strcat(resultBinaryLine, "0000000000000000");
+	strcat(resultBinaryLine, int2bin16(totalTextCount * 4));
+	printf(".text: %s\n", int2bin16(totalTextCount * 4));
+	strcat(resultBinaryLine, "0000000000000000");
+	strcat(resultBinaryLine, int2bin16((totalTextCount - labelCounter) * 4));
+	printf(".data: %s (%d)\n", int2bin16((totalTextCount - labelCounter + 1) * 4), (totalTextCount - labelCounter + 1));
 
 	// process....
 	while (counter < totalTextCount-1){
@@ -289,8 +296,16 @@ main(int argc, char *argv[])
 			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
 			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
 
-			// calc dist. to op3 label
-			printf("beq  : todo\n");
+			strcat(op3, ":");
+			for (int i = 0; i < labelCounter; i++) {
+				if (strcmp(labelList[i].name, op3) == 0) {
+					int dist = ((labelList[i].location - textStartAddress) / 4) - counter;
+					printf("%d\n", dist);
+					strcat(tempBinaryLine, int2bin16(dist)); // immediate
+					break;
+				}
+			}
+			printf("beq  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "bne") == 0) {
 
@@ -303,24 +318,34 @@ main(int argc, char *argv[])
 			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
 			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
 
-			// calc dist. to op3 label
-			printf("bne  : todo\n");
-			for (int i = 0; i < labelCount; i++) {
+			// TODOTODOTODTO@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+			strcat(op3, ":");
+			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
-					printf("found label %d, located at %d.\n", labelList[i].name, labelList[i].location);
-
+					int dist = ((labelList[i].location - textStartAddress) / 4) - counter;
+					strcat(tempBinaryLine, int2bin16(dist)); // immediate
+					break;
 				}
 			}
-
+			printf("bne  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "j") == 0) {
 
 			op1 = strtok(NULL, "$\n, "); // label
 
 			strcpy(tempBinaryLine, "000010"); // opcode
+			strcat(tempBinaryLine, "0000010000"); // I don't actually understand.
+			// maybe this is always same??? just start address of .text area?
 
-			// address
-			printf("j    : todo\n");
+			strcat(op1, ":");
+			for (int i = 0; i < labelCounter; i++) {
+				if (strcmp(labelList[i].name, op1) == 0) {
+					int loc = (labelList[i].location - textStartAddress) / 4;
+					strcat(tempBinaryLine, int2bin16(loc));
+					break;
+				}
+			}
+			printf("j    : %s\n", tempBinaryLine);
 
 		}
 		else if (strcmp(token, "jal") == 0) {
@@ -374,23 +399,20 @@ main(int argc, char *argv[])
 	
 	printf("@@@@ end of line @@@@\n\n");
 
-
-	// print out count of data and text at first of code
-	strcpy(tempBinaryLine, "0000000000000000");
-	strcat(tempBinaryLine, int2bin16(totalTextCount * 4));
-	printf(".text: %s\n", tempBinaryLine);
-	strcpy(tempBinaryLine, "0000000000000000");
-	strcat(tempBinaryLine, int2bin16(dataCounter * 4));
-	printf(".data: %s\n", tempBinaryLine);
-
 	// print out every data at end of code
 	for (int i = 0; i < dataCounter; i++) {
-		if (dataList[i].value[1] == 'x') // data is hex(address)
+		if (dataList[i].value[1] == 'x') { // data is hex(address)
 			printf("data : %s\n", int2bin32(hex2int(dataList[i].value)));
-		else
+			//strcat(resultBinaryLine, int2bin32(hex2int(dataList[i].value)));
+		}
+		else {
 			printf("data : %s\n", int2bin32(atoi(dataList[i].value)));
+			//strcat(resultBinaryLine, int2bin32(atoi(dataList[i].value)));
+		}
 	}
 	
+	printf("@@@@@@@@@@@@@@@@@@@@@ RESULT @@@@@@@@@@@@@\n\n");
+	//printf("%s", resultBinaryLine);
 
 	fclose(input);
 	//fclose(output);
@@ -453,11 +475,25 @@ const char* int2bin5(int num){
 }
 
 const char* int2bin16(int num) {
+
 	char result[] = "0000000000000000";
+
+	if (num < 0) {
+		strcpy(result, int2bin16(~num));
+		for (int i = 0; i < 16; i++) {
+			if (result[i] == '0')
+				result[i] = '1';
+			else
+				result[i] = '0';
+		}
+		return strdup(result);
+	}
+
 	for (int i = 15; i >= 0; i--) {
 		result[i] = (num % 2 == 0) ? '0' : '1';
 		num /= 2;
 	}
+
 	return strdup(result);
 }
 
