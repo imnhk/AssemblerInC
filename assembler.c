@@ -17,6 +17,7 @@ int hex2int(char* hex);
 
 const char* int2bin5(int num);
 const char* int2bin16(int num);
+const char* int2bin32(int num);
 
 /*******************************************************
  * Function: main
@@ -52,42 +53,73 @@ main(int argc, char *argv[])
 
 	filename = strdup("output_test.o"); // strdup() is not a standard C library but fairy used a lot.
 
-	char instructionLine[MAX_INSTRUCTION_LEN];
 	char *token = NULL;
 	char *op1, *op2, *op3;
-	int counter = 0; // .text line count, include Labels
-	int totalDataCount = 0, totalTextCount = 0; // binary line count, exclude labels.
+
+
+	char dataArea[10][MAX_INSTRUCTION_LEN];
+	int dataCounter = 0;
 	const int dataStartAddress = 4096; // 0001 0000 0000 0000(2) upper 16bit (0x1000 0000)
+
+
+	char textArea[100][MAX_INSTRUCTION_LEN];
+	int counter = 0;
 	const int textStartAddress = 64; // 0000 0000 0100 0000(2) upper 16bit (0x0040 0000)
-	int dataCount = 0;
+
+	int totalTextCount = 0; // binary line count, exclude labels.
+	int dataLoadCount = 0; // count 
+	int labelCount = 0;
+
+
+	struct variable {
+		int location;
+		char label[20];
+		char value[20];
+	};
+	struct variable dataList[10];
+	struct label {
+		int location;
+		char* name[20];
+	};
+	struct label labelList[10];
 
 	char binaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
 
-	fgets(instructionLine, MAX_INSTRUCTION_LEN, input); // first line should be .data
-	token = strtok(instructionLine, "\n\t");
-	printf("first line: %s\n", token);
+	fgets(textArea[counter], MAX_INSTRUCTION_LEN, input); // first line should be .data
+	token = strtok(textArea, "\n\t");
 
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
-		token = strtok(instructionLine, "\n\t");
-		totalDataCount++;
+	while (fgets(textArea, MAX_INSTRUCTION_LEN, input) != NULL){
+		token = strtok(textArea, "\n\t");
+		printf("token: %s\n", token);
 
 		if (strcmp(token, ".text") == 0) {
-			totalDataCount -= 1; // exclude ".text" line
 			break;
+		}
+		else {
+			strcpy(dataList[dataCounter].label, token); // get name:
+
+			token = strtok(NULL, "\n\t"); // this should be .word
+			token = strtok(NULL, "\n\t"); // Now this is value
+			strcpy(dataList[dataCounter].value, token); // get name:
+			printf("got value %s\n", dataList[dataCounter].value);
+
+
+			dataList[dataCounter].location = dataStartAddress + (4 * dataCounter);
+			printf("Added %s at %d\n", dataList[dataCounter].label, dataList[dataCounter].location);
+			dataCounter++;
 		}
 	}
 
-	printf("Data: %d\n", totalDataCount);
-
-	while (fgets(instructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
+	while (fgets(textArea, MAX_INSTRUCTION_LEN, input) != NULL){
 		
-		token = strtok(instructionLine, "\t\n, ");
+		token = strtok(textArea, "\t\n, ");
 		totalTextCount++;
 
 		while (token){
 
-			printf("counter: %d, token: %s\n", counter, token);
+			printf("token: %s\n", token);
+			printf("counter: %d, ", counter);
 
 			if (strcmp(token, "and") == 0) {
 				op1 = strtok(NULL, "$\n, ");
@@ -142,7 +174,7 @@ main(int argc, char *argv[])
 					strcat(binaryLine, int2bin16(hex2int(op3)));
 				else
 					strcat(binaryLine, int2bin16(atoi(op3)));
-
+				
 				printf("ori  : %s\n", binaryLine);
 			}
 			else if (strcmp(token, "nor") == 0) {		
@@ -174,15 +206,16 @@ main(int argc, char *argv[])
 
 				printf("lui  : %s\n", binaryLine);
 
-				if (dataCount != 0) {
+				if (dataLoadCount != 0) {
 					strcpy(binaryLine, "001101"); // opcode
 					strcat(binaryLine, int2bin5(atoi(op1)));
 					strcat(binaryLine, int2bin5(atoi(op1)));
-					strcat(binaryLine, int2bin16(dataCount*4));
-					printf("ori  : %s\n", binaryLine);
+					strcat(binaryLine, int2bin16(dataLoadCount*4));
+
 					totalTextCount++;
+					printf("ori  : %s\n", binaryLine);
 				}
-				dataCount++;
+				dataLoadCount++;
 
 			}
 			else if (strcmp(token, "lw") == 0) {		
@@ -244,7 +277,7 @@ main(int argc, char *argv[])
 
 				op1 = strtok(NULL, "$\n, ");
 				op2 = strtok(NULL, "$\n, "); 
-				op3 = strtok(NULL, "$\n, ");
+				op3 = strtok(NULL, "$\n, "); // label
 
 				strcpy(binaryLine, "000101"); // opcode
 				
@@ -253,6 +286,13 @@ main(int argc, char *argv[])
 
 				// calc dist. to op3 label
 				printf("bne  : todo\n");
+				for (int i = 0; i < labelCount; i++) {
+					if (strcmp(labelList[i].name, op3) == 0) {
+						printf("found label %d, located at %d.\n", labelList[i].name, labelList[i].location);
+
+					}
+				}
+
 			}
 			else if (strcmp(token, "j") == 0) {
 				
@@ -311,22 +351,37 @@ main(int argc, char *argv[])
 			}
 			else {
 				// Label
-				printf("label: ************** %s **************\n", token);
+				strcpy(labelList[labelCount].name, token); // get name:
+				labelList[labelCount].location = textStartAddress + (counter * 4);
+
+				printf("Added %s at %d\n", labelList[labelCount].name, labelList[labelCount].location);
+				labelCount++;
+
 				totalTextCount--;
 			}
 
 			token = strtok(NULL, "\n\t");
 			counter++;
 		}
-
 	}
-	printf("\n\n.text: %d\t.data: %d\n", totalTextCount, totalDataCount);
+	printf("@@@@ end of line @@@@\n\n");
+
+
+	// print out count of data and text at first of code
 	strcpy(binaryLine, "0000000000000000");
 	strcat(binaryLine, int2bin16(totalTextCount * 4));
 	printf(".text: %s\n", binaryLine);
 	strcpy(binaryLine, "0000000000000000");
-	strcat(binaryLine, int2bin16(totalDataCount * 4));
+	strcat(binaryLine, int2bin16(dataCounter * 4));
 	printf(".data: %s\n", binaryLine);
+
+	// print out every data at end of code
+	for (int i = 0; i < dataCounter; i++) {
+		if (dataList[i].value[1] == 'x') // data is hex(address)
+			printf("data : %s\n", int2bin32(hex2int(dataList[i].value)));
+		else
+			printf("data : %s\n", int2bin32(atoi(dataList[i].value)));
+	}
 	
 
 	fclose(input);
@@ -392,6 +447,15 @@ const char* int2bin5(int num){
 const char* int2bin16(int num) {
 	char result[] = "0000000000000000";
 	for (int i = 15; i >= 0; i--) {
+		result[i] = (num % 2 == 0) ? '0' : '1';
+		num /= 2;
+	}
+	return strdup(result);
+}
+
+const char* int2bin32(int num) {
+	char result[] = "00000000000000000000000000000000";
+	for (int i = 31; i >= 0; i--) {
 		result[i] = (num % 2 == 0) ? '0' : '1';
 		num /= 2;
 	}
