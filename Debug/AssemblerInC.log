@@ -1,14 +1,17 @@
 ﻿  assembler.c
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(118): warning C4133: '함수': 'int [50]'과(와) 'char *' 사이의 형식이 호환되지 않습니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(120): warning C4133: '함수': 'int [50]'과(와) 'const char *' 사이의 형식이 호환되지 않습니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(125): warning C4047: '함수': 'char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(125): warning C4024: 'strcpy': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(147): warning C4133: '함수': 'int [50]'과(와) 'char *' 사이의 형식이 호환되지 않습니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(301): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(301): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(324): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(324): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(342): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
-d:\문서\github\assemblerinc\assemblerinc\assembler.c(342): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(101): warning C4047: '함수': 'char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(101): warning C4024: 'strcpy': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(121): warning C4133: '함수': 'int [50]'과(와) 'char *' 사이의 형식이 호환되지 않습니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(123): warning C4133: '함수': 'int [50]'과(와) 'const char *' 사이의 형식이 호환되지 않습니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(128): warning C4047: '함수': 'char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(128): warning C4024: 'strcpy': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(144): warning C4477: 'printf' : 서식 문자열 '%s'에 'char *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char **'입니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(153): warning C4133: '함수': 'int [50]'과(와) 'char *' 사이의 형식이 호환되지 않습니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(309): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(309): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(332): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(332): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(350): warning C4047: '함수': 'const char *'의 간접 참조 수준이 'char *[20]'과(와) 다릅니다.
+d:\문서\github\assemblerinc\assemblerinc\assembler.c(350): warning C4024: 'strcmp': 형식 및 실제 매개 변수 1의 형식이 서로 다릅니다.
 d:\문서\github\assemblerinc\assemblerinc\assembler.c(45): warning C4101: 'output' :참조되지 않은 지역 변수입니다.
   AssemblerInC.vcxproj -> D:\문서\GitHub\AssemblerInC\Debug\AssemblerInC.exe

@@ -45,7 +45,7 @@ main(int argc, char *argv[])
 	FILE *input, *output;
 	char *filename;
 
-	input = fopen("example1.s", "r");
+	input = fopen("example4.s", "r");
 	if (input == NULL){
 		perror("ERROR");
 		exit(EXIT_FAILURE);
@@ -57,17 +57,16 @@ main(int argc, char *argv[])
 	char *op1, *op2, *op3;
 	char tempInstructionLine[MAX_INSTRUCTION_LEN]; // temp memory
 
-	char resultBinaryLine[2000]; // is this enough? 
+	char resultProgram[1000] = ""; // is this enough? 
 
 	struct variable {
 		int location;
-		char label[20];
+		char name[20];
 		char value[20];
 	};
 	struct variable dataList[10];
 	int dataCounter = 0;
-	const int dataStartAddress = 4096; // 0001 0000 0000 0000(2) upper 16bit (0x1000 0000)
-	
+	const int dataStartAddress = 4096; // upper 16bit (0x1000 0000)
 
 	struct label {
 		int location;
@@ -81,38 +80,42 @@ main(int argc, char *argv[])
 	const int textStartAddress = 64; // 0000 0000 0100 0000(2) upper 16bit (0x0040 0000)
 
 	int totalTextCount = 0; // binary line count, exclude labels.
-	int dataLoadCount = 0; // count 
+	int dataLoadCount = 0; // Counts loaded data. for dividing load inst.
 
 	char tempBinaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
 
 	fgets(tempInstructionLine, MAX_INSTRUCTION_LEN, input); // first line should be .data
-	token = strtok(tempInstructionLine, "\n\t");
+	//token = strtok(tempInstructionLine, "\n\t");
 
 	// Load .data area
 	while (fgets(tempInstructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
 		token = strtok(tempInstructionLine, "\n\t");
-
+		
 		if (strcmp(token, ".text") == 0) {
 			break;
 		}
-		else {
-			strcpy(dataList[dataCounter].label, token); // get name:
 
-			token = strtok(NULL, "\n\t"); // this should be .word
+		// this line has label(name)
+		if (token[strlen(token)-1] == ':') {
+			strcpy(labelList[labelCounter].name, token);
+			token = strtok(NULL, "\n\t "); // Discard .text token
 
-			token = strtok(NULL, "\n\t"); // value
-			strcpy(dataList[dataCounter].value, token); // value
-
-			dataList[dataCounter].location = dataStartAddress + (4 * dataCounter);
-			dataCounter++;
+			labelList[labelCounter].location = dataStartAddress + (dataCounter * 4);
+			//printf("Saved label %s at %d\n", labelList[labelCounter].name, labelList[labelCounter].location);
+			labelCounter++;
 		}
+		else { // don't have label(non-first element of array)
+			strcpy(dataList[dataCounter].name, "NONAME");
+		}
+
+		token = strtok(NULL, "\n\t ");
+		strcpy(dataList[dataCounter].value, token); // value	
+
+		dataList[dataCounter].location = dataStartAddress + (4 * dataCounter);
+		dataCounter++;
 	}
 
-	// Print .data table
-	for (int i = 0; i < dataCounter; i++) {
-		printf("%s at %d, value is %s\n", dataList[i].label, dataList[i].location, dataList[i].value);
-	}
 
 	// Load .text area
 	while (fgets(program[counter], MAX_INSTRUCTION_LEN, input) != NULL) {
@@ -121,25 +124,28 @@ main(int argc, char *argv[])
 		token = strtok(tempInstructionLine, "\n\t");
 
 		// Save Label
-		if (token[sizeof(token)] == ':') {
+		if (token[strlen(token)-1] == ':') {
 			strcpy(labelList[labelCounter].name, token);
 			labelList[labelCounter].location = textStartAddress + (counter * 4);
-			//printf("Saved label %s at %d\n", labelList[labelCounter].name, labelList[labelCounter].location);
+
 			labelCounter++;
+			counter--;
 		}
 		counter++;
 	}
 
+	// Print .data table
+	for (int i = 0; i < dataCounter; i++) {
+		printf("DATA: %s at %d\n", dataList[i].value, dataList[i].location);
+	}
+
+	// Print labels
+	for (int i = 0; i < labelCounter; i++) {
+		printf("LABEL: %s at %d\n", labelList[i].name, labelList[i].location);
+	}
+
 	totalTextCount = counter;
 	counter = 0;
-
-	// print out count of data and text at first of code
-	strcat(resultBinaryLine, "0000000000000000");
-	strcat(resultBinaryLine, int2bin16(totalTextCount * 4));
-	printf(".text: %s\n", int2bin16(totalTextCount * 4));
-	strcat(resultBinaryLine, "0000000000000000");
-	strcat(resultBinaryLine, int2bin16((totalTextCount - labelCounter) * 4));
-	printf(".data: %s (%d)\n", int2bin16((totalTextCount - labelCounter + 1) * 4), (totalTextCount - labelCounter + 1));
 
 	// process....
 	while (counter < totalTextCount-1){
@@ -239,6 +245,8 @@ main(int argc, char *argv[])
 				strcat(tempBinaryLine, int2bin16(dataLoadCount * 4));
 
 				totalTextCount++;
+				counter++;
+
 				printf("ori  : %s\n", tempBinaryLine);
 			}
 			dataLoadCount++;
@@ -299,7 +307,7 @@ main(int argc, char *argv[])
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
-					int dist = ((labelList[i].location - textStartAddress) / 4) - counter;
+					int dist = ((labelList[i].location - textStartAddress) / 4) - counter -1;
 					printf("%d\n", dist);
 					strcat(tempBinaryLine, int2bin16(dist)); // immediate
 					break;
@@ -322,7 +330,7 @@ main(int argc, char *argv[])
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
-					int dist = ((labelList[i].location - textStartAddress) / 4) - counter;
+					int dist = ((labelList[i].location - textStartAddress) / 4) - counter-1;
 					strcat(tempBinaryLine, int2bin16(dist)); // immediate
 					break;
 				}
@@ -399,21 +407,33 @@ main(int argc, char *argv[])
 	
 	printf("@@@@ end of line @@@@\n\n");
 
+	// print out count of data and text at first of code
+	strcpy(resultProgram, "0000000000000000");
+	strcat(resultProgram, int2bin16(totalTextCount * 4));
+	printf(".text: %s (%d) \n", resultProgram, totalTextCount * 4);
+
+	strcpy(resultProgram, "0000000000000000");
+	strcat(resultProgram, int2bin16(dataCounter * 4));
+	printf(".data: %s (%d)\n", resultProgram, dataCounter * 4);
+
+	printf("\nCode here\n\n");
+
 	// print out every data at end of code
 	for (int i = 0; i < dataCounter; i++) {
 		if (dataList[i].value[1] == 'x') { // data is hex(address)
 			printf("data : %s\n", int2bin32(hex2int(dataList[i].value)));
-			//strcat(resultBinaryLine, int2bin32(hex2int(dataList[i].value)));
+			strcat(resultProgram, int2bin32(hex2int(dataList[i].value)));
 		}
 		else {
 			printf("data : %s\n", int2bin32(atoi(dataList[i].value)));
-			//strcat(resultBinaryLine, int2bin32(atoi(dataList[i].value)));
+			strcat(resultProgram, int2bin32(atoi(dataList[i].value)));
 		}
 	}
 	
 	printf("@@@@@@@@@@@@@@@@@@@@@ RESULT @@@@@@@@@@@@@\n\n");
-	//printf("%s", resultBinaryLine);
+	printf("%s", resultProgram);
 
+	
 	fclose(input);
 	//fclose(output);
 	exit(EXIT_SUCCESS);
