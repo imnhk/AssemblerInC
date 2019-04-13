@@ -45,7 +45,7 @@ main(int argc, char *argv[])
 	FILE *input, *output;
 	char *filename;
 
-	input = fopen("example4.s", "r");
+	input = fopen("example2_mod.s", "r");
 	if (input == NULL){
 		perror("ERROR");
 		exit(EXIT_FAILURE);
@@ -171,8 +171,21 @@ main(int argc, char *argv[])
 			printf("and  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "andi") == 0) {
-			// Instruction ANDI, format I
-			// op2 = op1 & immediate(ZeroExtImm???)
+			op1 = strtok(NULL, "$\n, ");
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
+
+			strcpy(tempBinaryLine, "001100"); // opcode
+
+			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
+
+			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
+				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
+			else
+				strcat(tempBinaryLine, int2bin16(atoi(op3)));
+
+			printf("andi : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "or") == 0) {
 			op1 = strtok(NULL, "$\n, ");
@@ -199,8 +212,8 @@ main(int argc, char *argv[])
 
 			strcpy(tempBinaryLine, "001101"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
+			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
 
 			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
 				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
@@ -258,15 +271,15 @@ main(int argc, char *argv[])
 		}
 		else if (strcmp(token, "addiu") == 0) {
 
-			op1 = strtok(NULL, "$\n, "); // rs
-			op2 = strtok(NULL, "$\n, "); // rt
-			op3 = strtok(NULL, "$\n, "); // immediate
+			op1 = strtok(NULL, "$\n, ");
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
 
 			// opcode of ADDIU is 001001
 			strcpy(tempBinaryLine, "001001");
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
 			strcat(tempBinaryLine, int2bin5(atoi(op2)));
+			strcat(tempBinaryLine, int2bin5(atoi(op1)));
 
 			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
 				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
@@ -277,9 +290,9 @@ main(int argc, char *argv[])
 		}
 		else if (strcmp(token, "addu") == 0) {
 
-			op1 = strtok(NULL, "$\n, "); // rs 5
-			op2 = strtok(NULL, "$\n, "); // rt 5
-			op3 = strtok(NULL, "$\n, "); // rd 31
+			op1 = strtok(NULL, "$\n, ");
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
 
 			strcpy(tempBinaryLine, "000000"); // opcode
 
@@ -293,6 +306,20 @@ main(int argc, char *argv[])
 			printf("addu : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "subu") == 0) {
+			op1 = strtok(NULL, "$\n, ");
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
+
+			strcpy(tempBinaryLine, "000000"); // opcode
+
+			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
+			strcat(tempBinaryLine, int2bin5(atoi(op3))); // rt
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
+
+			strcat(tempBinaryLine, "00000"); // shamt
+			strcat(tempBinaryLine, "100011"); // funct
+
+			printf("subu : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "beq") == 0) {
 			op1 = strtok(NULL, "$\n, ");
@@ -301,8 +328,8 @@ main(int argc, char *argv[])
 
 			strcpy(tempBinaryLine, "000100"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
+			strcat(tempBinaryLine, int2bin5(atoi(op2)));
+			strcat(tempBinaryLine, int2bin5(atoi(op1)));
 
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
@@ -361,6 +388,16 @@ main(int argc, char *argv[])
 		else if (strcmp(token, "jr") == 0) {
 		}
 		else if (strcmp(token, "lui") == 0) {
+			op1 = strtok(NULL, "$\n, "); // register
+			op2 = strtok(NULL, "$\n, "); // label
+
+			strcpy(tempBinaryLine, "001111"); // opcode
+			strcat(tempBinaryLine, "00000"); // rs
+
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
+			strcat(tempBinaryLine, int2bin16(atoi(op2))); // immediate
+
+			printf("lui  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "sltiu") == 0) {
 		}
@@ -407,7 +444,7 @@ main(int argc, char *argv[])
 	
 	printf("@@@@ end of line @@@@\n\n");
 
-	// print out count of data and text at first of code
+	// print out count of data and text at front of code
 	strcpy(resultProgram, "0000000000000000");
 	strcat(resultProgram, int2bin16(totalTextCount * 4));
 	printf(".text: %s (%d) \n", resultProgram, totalTextCount * 4);
