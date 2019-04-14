@@ -45,7 +45,7 @@ main(int argc, char *argv[])
 	FILE *input, *output;
 	char *filename;
 
-	input = fopen("example2_mod.s", "r");
+	input = fopen("example1.s", "r");
 	if (input == NULL){
 		perror("ERROR");
 		exit(EXIT_FAILURE);
@@ -59,12 +59,12 @@ main(int argc, char *argv[])
 
 	char resultProgram[1000] = ""; // is this enough? 
 
-	struct variable {
+	struct data {
 		int location;
 		char name[20];
 		char value[20];
 	};
-	struct variable dataList[10];
+	struct data dataList[10];
 	int dataCounter = 0;
 	const int dataStartAddress = 4096; // upper 16bit (0x1000 0000)
 
@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 	const int textStartAddress = 64; // 0000 0000 0100 0000(2) upper 16bit (0x0040 0000)
 
 	int totalTextCount = 0; // binary line count, exclude labels.
-	int dataLoadCount = 0; // Counts loaded data. for dividing load inst.
+	int additionalTextCount = 0; // additional line created by LA insturction
 
 	char tempBinaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
 
@@ -121,6 +121,7 @@ main(int argc, char *argv[])
 	while (fgets(program[counter], MAX_INSTRUCTION_LEN, input) != NULL) {
 
 		strcpy(tempInstructionLine, program[counter]);
+		//printf("program: %s\n", tempInstructionLine);
 		token = strtok(tempInstructionLine, "\n\t");
 
 		// Save Label
@@ -148,7 +149,7 @@ main(int argc, char *argv[])
 	counter = 0;
 
 	// process....
-	while (counter < totalTextCount-1){
+	while (counter < totalTextCount){
 
 		token = strtok(program[counter], "\n\t$");
 		printf("counter: %d, token: %s\n", counter, token);
@@ -166,7 +167,7 @@ main(int argc, char *argv[])
 			strcat(tempBinaryLine, int2bin5(atoi(op1)));
 
 			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "000000"); // funct
+			strcat(tempBinaryLine, "100100"); // funct
 
 			printf("and  : %s\n", tempBinaryLine);
 		}
@@ -251,21 +252,37 @@ main(int argc, char *argv[])
 
 			printf("lui  : %s\n", tempBinaryLine);
 
-			if (dataLoadCount != 0) {
-				strcpy(tempBinaryLine, "001101"); // opcode
-				strcat(tempBinaryLine, int2bin5(atoi(op1)));
-				strcat(tempBinaryLine, int2bin5(atoi(op1)));
-				strcat(tempBinaryLine, int2bin16(dataLoadCount * 4));
+			strcat(op2, ":");
+			for (int i = 0; i < labelCounter; i++) {
+				if (strcmp(labelList[i].name, op2) == 0) {
+					if (labelList[i].location != dataStartAddress) {
+						strcpy(tempBinaryLine, "001101"); // opcode
+						strcat(tempBinaryLine, int2bin5(atoi(op1)));
+						strcat(tempBinaryLine, int2bin5(atoi(op1)));
+						strcat(tempBinaryLine, int2bin16(labelList[i].location - dataStartAddress));
 
-				totalTextCount++;
-				counter++;
+						counter++;
+						additionalTextCount++;
 
-				printf("ori  : %s\n", tempBinaryLine);
+						printf("ori  : %s\n", tempBinaryLine);
+					}
+					break;
+				}
 			}
-			dataLoadCount++;
-
 		}
 		else if (strcmp(token, "lw") == 0) {
+			op1 = strtok(NULL, "$()\n, ");
+			op2 = strtok(NULL, "$()\n, ");
+			op3 = strtok(NULL, "$()\n, ");
+
+			strcpy(tempBinaryLine, "100011");
+
+			strcat(tempBinaryLine, int2bin5(atoi(op3))); // $3
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // $5
+
+			strcat(tempBinaryLine, int2bin16(atoi(op2)));
+
+			printf("lw   : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "sw") == 0) {
 		}
@@ -275,7 +292,6 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			// opcode of ADDIU is 001001
 			strcpy(tempBinaryLine, "001001");
 
 			strcat(tempBinaryLine, int2bin5(atoi(op2)));
@@ -335,7 +351,6 @@ main(int argc, char *argv[])
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
 					int dist = ((labelList[i].location - textStartAddress) / 4) - counter -1;
-					printf("%d\n", dist);
 					strcat(tempBinaryLine, int2bin16(dist)); // immediate
 					break;
 				}
@@ -353,11 +368,10 @@ main(int argc, char *argv[])
 			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
 			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
 
-			// TODOTODOTODTO@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
-					int dist = ((labelList[i].location - textStartAddress) / 4) - counter-1;
+					int dist = ((labelList[i].location - textStartAddress) / 4) - counter - 1;
 					strcat(tempBinaryLine, int2bin16(dist)); // immediate
 					break;
 				}
@@ -375,17 +389,40 @@ main(int argc, char *argv[])
 			strcat(op1, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op1) == 0) {
+					int loc = (labelList[i].location - textStartAddress) / 4 + additionalTextCount;
+					strcat(tempBinaryLine, int2bin16(loc));
+					break;
+				}
+			}
+			printf("j    : %s\n", tempBinaryLine);	
+		}
+		else if (strcmp(token, "jal") == 0) {
+			op1 = strtok(NULL, "$\n, "); // label
+			
+			strcpy(tempBinaryLine, "000011"); // opcode
+			strcat(tempBinaryLine, "0000010000");
+
+			strcat(op1, ":");
+			for (int i = 0; i < labelCounter; i++) {
+				if (strcmp(labelList[i].name, op1) == 0) {
 					int loc = (labelList[i].location - textStartAddress) / 4;
 					strcat(tempBinaryLine, int2bin16(loc));
 					break;
 				}
 			}
-			printf("j    : %s\n", tempBinaryLine);
-
-		}
-		else if (strcmp(token, "jal") == 0) {
+			printf("jal  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "jr") == 0) {
+			op1 = strtok(NULL, "$\n, ");
+			
+			strcpy(tempBinaryLine, "000000");
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
+			strcat(tempBinaryLine, "00000");
+			strcat(tempBinaryLine, "00000");
+			strcat(tempBinaryLine, "00000");
+			strcat(tempBinaryLine, "001000");
+
+			printf("jr   : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "lui") == 0) {
 			op1 = strtok(NULL, "$\n, "); // register
@@ -400,8 +437,32 @@ main(int argc, char *argv[])
 			printf("lui  : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "sltiu") == 0) {
+			op1 = strtok(NULL, "$\n, ");
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
+
+			strcpy(tempBinaryLine, "001011"); // opcode
+
+			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
+			strcat(tempBinaryLine, int2bin16(atoi(op3))); // shamt
+
+			printf("sltiu: %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "sltu") == 0) {
+			op1 = strtok(NULL, "$\n, "); // 4 2 3
+			op2 = strtok(NULL, "$\n, ");
+			op3 = strtok(NULL, "$\n, ");
+
+			strcpy(tempBinaryLine, "000000"); // opcode
+
+			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
+			strcat(tempBinaryLine, int2bin5(atoi(op3))); // rt
+			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
+			strcat(tempBinaryLine, "00000"); // rd
+			strcat(tempBinaryLine, "101011"); // funct
+
+			printf("sltu : %s\n", tempBinaryLine);
 		}
 		else if (strcmp(token, "sll") == 0) {
 
@@ -446,8 +507,8 @@ main(int argc, char *argv[])
 
 	// print out count of data and text at front of code
 	strcpy(resultProgram, "0000000000000000");
-	strcat(resultProgram, int2bin16(totalTextCount * 4));
-	printf(".text: %s (%d) \n", resultProgram, totalTextCount * 4);
+	strcat(resultProgram, int2bin16((totalTextCount + additionalTextCount) * 4));
+	printf(".text: %s (%d) \n", resultProgram, (totalTextCount + additionalTextCount) * 4);
 
 	strcpy(resultProgram, "0000000000000000");
 	strcat(resultProgram, int2bin16(dataCounter * 4));
