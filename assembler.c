@@ -51,14 +51,18 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	filename = strdup("output_test.o"); // strdup() is not a standard C library but fairy used a lot.
+	filename = strdup("output_test.o");
 
 	char *token = NULL;
 	char *op1, *op2, *op3;
 	char tempInstructionLine[MAX_INSTRUCTION_LEN]; // temp memory
 
-	char textAreaBinary[1000] = ""; // is this enough? 
+	char textAreaBinary[1000] = "";
 	char resultBinary[1000] = "";
+	char tempBinary32[] = "00000000000000000000000000000000";
+
+	const int dataStartAddress = 4096; // upper 16bit (0x1000 0000)
+	const int textStartAddress = 64; // upper 16bit (0x0040 0000)
 
 	struct data {
 		int location;
@@ -67,7 +71,6 @@ main(int argc, char *argv[])
 	};
 	struct data dataList[10];
 	int dataCounter = 0;
-	const int dataStartAddress = 4096; // upper 16bit (0x1000 0000)
 
 	struct label {
 		int location;
@@ -78,16 +81,11 @@ main(int argc, char *argv[])
 
 	int program[100][MAX_INSTRUCTION_LEN];
 	int counter = 0;
-	const int textStartAddress = 64; // 0000 0000 0100 0000(2) upper 16bit (0x0040 0000)
 
 	int totalTextCount = 0; // binary line count, exclude labels.
 	int additionalTextCount = 0; // additional line created by LA insturction
 
-	char tempBinaryLine[] = "00000000000000000000000000000000"; // 32bit, temp
-
-
 	fgets(tempInstructionLine, MAX_INSTRUCTION_LEN, input); // first line should be .data
-	//token = strtok(tempInstructionLine, "\n\t");
 
 	// Load .data area
 	while (fgets(tempInstructionLine, MAX_INSTRUCTION_LEN, input) != NULL){
@@ -103,7 +101,6 @@ main(int argc, char *argv[])
 			token = strtok(NULL, "\n\t "); // Discard .text token
 
 			labelList[labelCounter].location = dataStartAddress + (dataCounter * 4);
-			//printf("Saved label %s at %d\n", labelList[labelCounter].name, labelList[labelCounter].location);
 			labelCounter++;
 		}
 		else { // don't have label(non-first element of array)
@@ -111,7 +108,7 @@ main(int argc, char *argv[])
 		}
 
 		token = strtok(NULL, "\n\t ");
-		strcpy(dataList[dataCounter].value, token); // value	
+		strcpy(dataList[dataCounter].value, token);
 
 		dataList[dataCounter].location = dataStartAddress + (4 * dataCounter);
 		dataCounter++;
@@ -160,54 +157,54 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
 			// rs, rt, rd
-			strcat(tempBinaryLine, int2bin5(atoi(op2)));
-			strcat(tempBinaryLine, int2bin5(atoi(op3)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin5(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op3)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
 
-			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "100100"); // funct
+			strcat(tempBinary32, "00000"); // shamt
+			strcat(tempBinary32, "100100"); // funct
 
-			printf("and  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("and  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "andi") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "001100"); // opcode
+			strcpy(tempBinary32, "001100"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rt
 
 			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
-				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
+				strcat(tempBinary32, int2bin16(hex2int(op3)));
 			else
-				strcat(tempBinaryLine, int2bin16(atoi(op3)));
+				strcat(tempBinary32, int2bin16(atoi(op3)));
 
-			printf("andi : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("andi : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "or") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
 			// rs, rt, rd
-			strcat(tempBinaryLine, int2bin5(atoi(op2)));
-			strcat(tempBinaryLine, int2bin5(atoi(op3)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin5(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op3)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
 
-			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "100101"); // funct
+			strcat(tempBinary32, "00000"); // shamt
+			strcat(tempBinary32, "100101"); // funct
 
-			printf("or   : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("or   : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "ori") == 0) {
 
@@ -215,63 +212,63 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "001101"); // opcode
+			strcpy(tempBinary32, "001101"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rt
 
 			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
-				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
+				strcat(tempBinary32, int2bin16(hex2int(op3)));
 			else
-				strcat(tempBinaryLine, int2bin16(atoi(op3)));
+				strcat(tempBinary32, int2bin16(atoi(op3)));
 
-			printf("ori  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("ori  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "nor") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
 			// rs, rt, rd
-			strcat(tempBinaryLine, int2bin5(atoi(op2)));
-			strcat(tempBinaryLine, int2bin5(atoi(op3)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin5(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op3)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
 
-			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "100111"); // funct
+			strcat(tempBinary32, "00000"); // shamt
+			strcat(tempBinary32, "100111"); // funct
 
-			printf("nor  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("nor  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "la") == 0) {
 
 			op1 = strtok(NULL, "$\n, "); // register
 			op2 = strtok(NULL, "$\n, "); // label
 
-			strcpy(tempBinaryLine, "001111"); // opcode
-			strcat(tempBinaryLine, "00000"); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
-			strcat(tempBinaryLine, int2bin16(dataStartAddress)); // immediate
+			strcpy(tempBinary32, "001111"); // opcode
+			strcat(tempBinary32, "00000"); // rs
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rt
+			strcat(tempBinary32, int2bin16(dataStartAddress)); // immediate
 
-			printf("lui  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("lui  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 
 			strcat(op2, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op2) == 0) {
 					if (labelList[i].location != dataStartAddress) {
-						strcpy(tempBinaryLine, "001101"); // opcode
-						strcat(tempBinaryLine, int2bin5(atoi(op1)));
-						strcat(tempBinaryLine, int2bin5(atoi(op1)));
-						strcat(tempBinaryLine, int2bin16(labelList[i].location - dataStartAddress));
+						strcpy(tempBinary32, "001101"); // opcode
+						strcat(tempBinary32, int2bin5(atoi(op1)));
+						strcat(tempBinary32, int2bin5(atoi(op1)));
+						strcat(tempBinary32, int2bin16(labelList[i].location - dataStartAddress));
 
 						additionalTextCount++;
 
-						printf("ori  : %s\n", tempBinaryLine);
-						strcat(textAreaBinary, tempBinaryLine);
+						printf("ori  : %s\n", tempBinary32);
+						strcat(textAreaBinary, tempBinary32);
 					}
 					break;
 				}
@@ -282,28 +279,28 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$()\n, ");
 			op3 = strtok(NULL, "$()\n, ");
 
-			strcpy(tempBinaryLine, "100011");
+			strcpy(tempBinary32, "100011");
 
-			strcat(tempBinaryLine, int2bin5(atoi(op3)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
-			strcat(tempBinaryLine, int2bin16(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op3)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin16(atoi(op2)));
 
-			printf("lw   : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("lw   : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "sw") == 0) {
 			op1 = strtok(NULL, "$()\n, ");
 			op2 = strtok(NULL, "$()\n, ");
 			op3 = strtok(NULL, "$()\n, ");
 
-			strcpy(tempBinaryLine, "101011");
+			strcpy(tempBinary32, "101011");
 
-			strcat(tempBinaryLine, int2bin5(atoi(op3)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
-			strcat(tempBinaryLine, int2bin16(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op3)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin16(atoi(op2)));
 
-			printf("sw   : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("sw   : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "addiu") == 0) {
 
@@ -311,18 +308,18 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "001001");
+			strcpy(tempBinary32, "001001");
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2)));
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin5(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
 
 			if (op3[0] == '0' && op3[1] == 'x') //immediate is hex
-				strcat(tempBinaryLine, int2bin16(hex2int(op3)));
+				strcat(tempBinary32, int2bin16(hex2int(op3)));
 			else
-				strcat(tempBinaryLine, int2bin16(atoi(op3)));
+				strcat(tempBinary32, int2bin16(atoi(op3)));
 
-			printf("addiu: %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("addiu: %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "addu") == 0) {
 
@@ -330,55 +327,55 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op3))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op3))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
 
-			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "100001"); // funct
+			strcat(tempBinary32, "00000"); // shamt
+			strcat(tempBinary32, "100001"); // funct
 
-			printf("addu : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("addu : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "subu") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op3))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op3))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
 
-			strcat(tempBinaryLine, "00000"); // shamt
-			strcat(tempBinaryLine, "100011"); // funct
+			strcat(tempBinary32, "00000"); // shamt
+			strcat(tempBinary32, "100011"); // funct
 
-			printf("subu : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("subu : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "beq") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000100"); // opcode
+			strcpy(tempBinary32, "000100"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1)));
-			strcat(tempBinaryLine, int2bin5(atoi(op2)));
+			strcat(tempBinary32, int2bin5(atoi(op1)));
+			strcat(tempBinary32, int2bin5(atoi(op2)));
 
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
 					int dist = ((labelList[i].location - textStartAddress) / 4) - counter -1;
-					strcat(tempBinaryLine, int2bin16(dist)); // immediate
+					strcat(tempBinary32, int2bin16(dist)); // immediate
 					break;
 				}
 			}
-			printf("beq  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("beq  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "bne") == 0) {
 
@@ -386,117 +383,117 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, "); // label
 
-			strcpy(tempBinaryLine, "000101"); // opcode
+			strcpy(tempBinary32, "000101"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rt
 
 			strcat(op3, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op3) == 0) {
 					int dist = ((labelList[i].location - textStartAddress) / 4) - counter - 1;
-					strcat(tempBinaryLine, int2bin16(dist)); // immediate
+					strcat(tempBinary32, int2bin16(dist)); // immediate
 					break;
 				}
 			}
-			printf("bne  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("bne  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "j") == 0) {
 
 			op1 = strtok(NULL, "$\n, "); // label
 
-			strcpy(tempBinaryLine, "000010"); // opcode
-			strcat(tempBinaryLine, "0000010000"); // I don't actually understand.
+			strcpy(tempBinary32, "000010"); // opcode
+			strcat(tempBinary32, "0000010000"); // I don't actually understand.
 			// maybe this is always same??? just start address of .text area?
 
 			strcat(op1, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op1) == 0) {
 					int loc = (labelList[i].location - textStartAddress) / 4 + additionalTextCount;
-					strcat(tempBinaryLine, int2bin16(loc));
+					strcat(tempBinary32, int2bin16(loc));
 					break;
 				}
 			}
-			printf("j    : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("j    : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "jal") == 0) {
 			op1 = strtok(NULL, "$\n, "); // label
 			
-			strcpy(tempBinaryLine, "000011"); // opcode
-			strcat(tempBinaryLine, "0000010000");
+			strcpy(tempBinary32, "000011"); // opcode
+			strcat(tempBinary32, "0000010000");
 
 			strcat(op1, ":");
 			for (int i = 0; i < labelCounter; i++) {
 				if (strcmp(labelList[i].name, op1) == 0) {
 					int loc = (labelList[i].location - textStartAddress) / 4;
-					strcat(tempBinaryLine, int2bin16(loc));
+					strcat(tempBinary32, int2bin16(loc));
 					break;
 				}
 			}
-			printf("jal  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("jal  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "jr") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			
-			strcpy(tempBinaryLine, "000000");
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rs
-			strcat(tempBinaryLine, "00000");
-			strcat(tempBinaryLine, "00000");
-			strcat(tempBinaryLine, "00000");
-			strcat(tempBinaryLine, "001000");
+			strcpy(tempBinary32, "000000");
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rs
+			strcat(tempBinary32, "00000");
+			strcat(tempBinary32, "00000");
+			strcat(tempBinary32, "00000");
+			strcat(tempBinary32, "001000");
 
-			printf("jr   : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("jr   : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "lui") == 0) {
 			op1 = strtok(NULL, "$\n, "); // register
 			op2 = strtok(NULL, "$\n, "); // label
 
-			strcpy(tempBinaryLine, "001111"); // opcode
-			strcat(tempBinaryLine, "00000"); // rs
+			strcpy(tempBinary32, "001111"); // opcode
+			strcat(tempBinary32, "00000"); // rs
 
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rt
 
 			if (op2[0] == '0' && op2[1] == 'x') //immediate is hex
-				strcat(tempBinaryLine, int2bin16(hex2int(op2)));
+				strcat(tempBinary32, int2bin16(hex2int(op2)));
 			else
-				strcat(tempBinaryLine, int2bin16(atoi(op2)));
+				strcat(tempBinary32, int2bin16(atoi(op2)));
 
-			printf("lui  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("lui  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "sltiu") == 0) {
 			op1 = strtok(NULL, "$\n, ");
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "001011"); // opcode
+			strcpy(tempBinary32, "001011"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
-			strcat(tempBinaryLine, int2bin16(atoi(op3))); // shamt
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, int2bin16(atoi(op3))); // shamt
 
-			printf("sltiu: %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("sltiu: %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "sltu") == 0) {
 			op1 = strtok(NULL, "$\n, "); // 4 2 3
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
+			strcpy(tempBinary32, "000000"); // opcode
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rs
-			strcat(tempBinaryLine, int2bin5(atoi(op3))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
-			strcat(tempBinaryLine, "00000"); // rd
-			strcat(tempBinaryLine, "101011"); // funct
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rs
+			strcat(tempBinary32, int2bin5(atoi(op3))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, "00000"); // rd
+			strcat(tempBinary32, "101011"); // funct
 
-			printf("sltu : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("sltu : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 		else if (strcmp(token, "sll") == 0) {
 
@@ -504,17 +501,17 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
-			strcat(tempBinaryLine, "00000"); // rs
+			strcpy(tempBinary32, "000000"); // opcode
+			strcat(tempBinary32, "00000"); // rs
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
-			strcat(tempBinaryLine, int2bin5(atoi(op3))); // shamt
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, int2bin5(atoi(op3))); // shamt
 
-			strcat(tempBinaryLine, "000000"); // funct
+			strcat(tempBinary32, "000000"); // funct
 
-			printf("sll  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("sll  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 
 		}
 		else if (strcmp(token, "srl") == 0) {
@@ -523,17 +520,17 @@ main(int argc, char *argv[])
 			op2 = strtok(NULL, "$\n, ");
 			op3 = strtok(NULL, "$\n, ");
 
-			strcpy(tempBinaryLine, "000000"); // opcode
-			strcat(tempBinaryLine, "00000"); // rs
+			strcpy(tempBinary32, "000000"); // opcode
+			strcat(tempBinary32, "00000"); // rs
 
-			strcat(tempBinaryLine, int2bin5(atoi(op2))); // rt
-			strcat(tempBinaryLine, int2bin5(atoi(op1))); // rd
-			strcat(tempBinaryLine, int2bin5(atoi(op3))); // shamt
+			strcat(tempBinary32, int2bin5(atoi(op2))); // rt
+			strcat(tempBinary32, int2bin5(atoi(op1))); // rd
+			strcat(tempBinary32, int2bin5(atoi(op3))); // shamt
 
-			strcat(tempBinaryLine, "000010"); // funct
+			strcat(tempBinary32, "000010"); // funct
 
-			printf("srl  : %s\n", tempBinaryLine);
-			strcat(textAreaBinary, tempBinaryLine);
+			printf("srl  : %s\n", tempBinary32);
+			strcat(textAreaBinary, tempBinary32);
 		}
 
 		counter++;
@@ -551,17 +548,14 @@ main(int argc, char *argv[])
 	strcat(resultBinary, int2bin16(dataCounter * 4));
 	//printf(".data: %s (%d)\n", textAreaBinary, dataCounter * 4);
 
-	printf("\nCode here\n\n");
 	strcat(resultBinary, textAreaBinary);
 
 	// print out every data at end of code
 	for (int i = 0; i < dataCounter; i++) {
 		if (dataList[i].value[1] == 'x') { // data is hex(address)
-			printf("data : %s\n", int2bin32(hex2int(dataList[i].value)));
 			strcat(resultBinary, int2bin32(hex2int(dataList[i].value)));
 		}
 		else {
-			printf("data : %s\n", int2bin32(atoi(dataList[i].value)));
 			strcat(resultBinary, int2bin32(atoi(dataList[i].value)));
 		}
 	}
@@ -575,23 +569,6 @@ main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-
-/*******************************************************
- * Function: change_file_ext
- *
- * Parameters:
- *  char
- *      *str: a raw filename (without path)
- *
- * Return:
- *  return NULL if a file is not an assembly file.
- *  return empty string
- *
- * Info:
- *  This function reads filename and converst it into
- *  object extention name, *.o
- *
- *******************************************************/
 char
 *change_file_ext(char *str)
 {
